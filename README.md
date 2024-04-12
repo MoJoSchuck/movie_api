@@ -8,7 +8,7 @@ This is the server-side project for MyFlix, a web application for viewing inform
 - Express.js
 - MongoDB
 - Mongoose
-- Features
+## Features
 
 ### Core Features
 - Return a list of all movies
