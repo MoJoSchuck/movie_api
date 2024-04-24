@@ -5,12 +5,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyFlix API Documentation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
 </head>
 
 <body>
     <h1>Welcome to MyFlix API Documentation</h1>
     <p>This API provides access to information about movies, directors, and genres. Users can interact with the API to
         retrieve data, update their profiles, and manage their list of favorite movies.</p>
+
+    <div class="container">
+        <h1>MyFlix API Endpoints</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Method Type</th>
+                    <th scope="col">Endpoint URL</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Request Format</th>
+                    <th scope="col">Response Format</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GET</td>
+                    <td>/movies</td>
+                    <td>Returns a list of all movies.</td>
+                    <td>N/A</td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td>GET</td>
+                    <td>/movies/:title</td>
+                    <td>Returns data about a single movie based on the title.</td>
+                    <td>N/A</td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td>GET</td>
+                    <td>/movies/genre/:genreName</td>
+                    <td>Returns data about a genre based on the name.</td>
+                    <td>N/A</td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td>GET</td>
+                    <td>/movies/directors/:directorName</td>
+                    <td>Returns data about a director based on the name.</td>
+                    <td>N/A</td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td>/users</td>
+                    <td>Allows a new user to register.</td>
+                    <td>JSON</td>
+                    <td>Text message (success or error message)</td>
+                </tr>
+                <tr>
+                    <td>PUT</td>
+                    <td>/users/:id</td>
+                    <td>Allows users to update their user information.</td>
+                    <td>User data (JSON)</td>
+                    <td>Text message (success or error message)</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td>/users/:id/:movieTitle</td>
+                    <td>Allows users to add a movie to their favorites list.</td>
+                    <td>N/A</td>
+                    <td>Text message (success or error message)</td>
+                </tr>
+                <tr>
+                    <td>DELETE</td>
+                    <td>/users/:id/:movieTitle</td>
+                    <td>Allows users to remove a movie from their favorites list.</td>
+                    <td>N/A</td>
+                    <td>Text message (success or error message)</td>
+                </tr>
+                <tr>
+                    <td>DELETE</td>
+                    <td>/users/:id</td>
+                    <td>Allows existing users to log out.</td>
+                    <td>N/A</td>
+                    <td>Text message (success or error message)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </body>
 
 </html>
