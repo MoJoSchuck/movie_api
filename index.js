@@ -249,34 +249,58 @@ app.put('/users/:id', (req, res) => {
     }
 })
 
-// CREATE
-app.post('/users/:id/:movieTitle', (req, res) => {
-    const { id, movieTitle } = req.params;
+// UPDATE
+app.patch('/users/:id/favorites/:movieId', (req, res) => {
+    const { id, movieId } = req.params;
 
+    const user = users.find(user => user.id == id);
+    const movie = movies.find(movie => movieId == movie.title);
 
-    let user = users.find(user => user.id == id);
+    if (!user) {
+        return res.status(400).send('No such user');
+    }
 
-    if (user) {
-        user.favoriteMovies.push(movieTitle);
-        res.status(200).json(user); //send(`${movieTitle} has been added to user ${id}'s array`);;
+    if (!movie) {
+        return res.status(400).send('No such movie');
+    }
+
+    const isFavorite = user.favoriteMovies.includes(movie.title);
+
+    if (isFavorite) {
+        user.favoriteMovies = user.favoriteMovies.filter(title => title !== movie.title);
+        res.status(200).json(user);
     } else {
-        res.status(400).send('no such user')
+        user.favoriteMovies.push(movie.title);
+        res.status(200).json(user);
     }
 })
+
 
 // DELETE
-app.delete('/users/:id/:movieTitle', (req, res) => {
-    const { id, movieTitle } = req.params;
+app.delete('/users/:id/favorites/:movieId', (req, res) => {
+    const { id, movieId } = req.params;
 
-    let user = users.find(user => user.id == id);
+    const user = users.find(user => user.id == id);
+    const movie = movies.find(movie => movieId == movie.title);
 
-    if (user) {
-        user.favoriteMovies = user.favoriteMovies.filter(title => title !== movieTitle);
-        res.status(200).send(`${movieTitle} has been removed from user ${id}'s array`);;
+    if (!user) {
+        return res.status(400).send('No such user');
+    }
+
+    if (!movie) {
+        return res.status(400).send('No such movie');
+    }
+
+    const isFavorite = user.favoriteMovies.includes(movie.title);
+
+    if (isFavorite) {
+        user.favoriteMovies = user.favoriteMovies.filter(title => title !== movie.title);
+        res.status(200).send(`${movie.title} has been removed from user ${id}'s favorites`);
     } else {
-        res.status(400).send('no such user')
+        res.status(400).send(`${movie.title} is not in user ${id}'s favorites`);
     }
 })
+
 
 // DELETE
 app.delete('/users/:id', (req, res) => {
