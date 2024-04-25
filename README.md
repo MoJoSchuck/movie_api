@@ -30,7 +30,7 @@ This is the server-side project for MyFlix, a web application for viewing inform
 1. Clone the repository: git clone <repository-url>
 2. Navigate to the project directory: cd myflix-server
 3. Install dependencies: npm install
-4. Start the server: node server.js
+4. Start the server: node index.js
 The server runs by default on port 8080.
 
 ## API Documentation
