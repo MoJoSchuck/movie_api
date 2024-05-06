@@ -33,63 +33,77 @@
                     <td>/movies</td>
                     <td>Returns a list of all movies.</td>
                     <td>N/A</td>
-                    <td>JSON</td>
+                    <td>JSON array of movie objects</td>
                 </tr>
                 <tr>
                     <td>GET</td>
                     <td>/movies/:title</td>
                     <td>Returns data about a single movie based on the title.</td>
                     <td>N/A</td>
-                    <td>JSON</td>
+                    <td>JSON object containing movie details</td>
                 </tr>
                 <tr>
                     <td>GET</td>
                     <td>/movies/genre/:genreName</td>
                     <td>Returns data about a genre based on the name.</td>
                     <td>N/A</td>
-                    <td>JSON</td>
+                    <td>JSON array of movie objects</td>
                 </tr>
                 <tr>
                     <td>GET</td>
                     <td>/movies/directors/:directorName</td>
                     <td>Returns data about a director based on the name.</td>
                     <td>N/A</td>
-                    <td>JSON</td>
+                    <td>JSON array of movie objects</td>
                 </tr>
                 <tr>
                     <td>POST</td>
                     <td>/users</td>
                     <td>Allows a new user to register.</td>
-                    <td>JSON</td>
-                    <td>Text message (success or error message)</td>
+                    <td>JSON object with user details<br>(Example: { "Username": "newUser", "Password": "password123", "Email": "newUser@example.com", "Birthday": "2000-01-01" })</td>
+                    <td>JSON object containing user details</td>
                 </tr>
                 <tr>
                     <td>PUT</td>
-                    <td>/users/:id</td>
+                    <td>/users/:Username</td>
                     <td>Allows users to update their user information.</td>
-                    <td>User data (JSON)</td>
-                    <td>Text message (success or error message)</td>
+                    <td>JSON object with updated user details<br>(Example: { "Username": "updatedUser", "Password": "updatedPassword", "Email": "updatedEmail@example.com", "Birthday": "1990-01-01" })</td>
+                    <td>JSON object containing updated user details</td>
                 </tr>
                 <tr>
                     <td>PATCH</td>
-                    <td>/users/:id/favorites/:movieId</td>
+                    <td>/users/:Username/movies/:MovieID</td>
                     <td>Allows users to add a movie to their favorites list.</td>
                     <td>N/A</td>
-                    <td>Text message (success or error message)</td>
+                    <td>JSON object containing user details</td>
                 </tr>
                 <tr>
                     <td>DELETE</td>
-                    <td>/users/:id/favorites/:movieId</td>
+                    <td>/users/:Username/movies/:MovieID</td>
                     <td>Allows users to remove a movie from their favorites list.</td>
                     <td>N/A</td>
-                    <td>Text message (success or error message)</td>
+                    <td>JSON object containing user details</td>
                 </tr>
                 <tr>
                     <td>DELETE</td>
-                    <td>/users/:id</td>
-                    <td>Allows existing users to log out.</td>
+                    <td>/users/:Username</td>
+                    <td>Allows existing users to delete their accounts.</td>
                     <td>N/A</td>
                     <td>Text message (success or error message)</td>
+                </tr>
+                <tr>
+                    <td>GET</td>
+                    <td>/users</td>
+                    <td>Returns a list of all users.</td>
+                    <td>N/A</td>
+                    <td>JSON array of user objects</td>
+                </tr>
+                <tr>
+                    <td>GET</td>
+                    <td>/users/:Username</td>
+                    <td>Returns data about a single user based on the username.</td>
+                    <td>N/A</td>
+                    <td>JSON object containing user details</td>
                 </tr>
             </tbody>
         </table>
