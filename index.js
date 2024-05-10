@@ -3,10 +3,24 @@ const express = require('express'),
     uuid = require('uuid'),
     bodyParser = require('body-parser'),
     mongoose = require('mongoose'),
-    Models = require('./models.js');
+    Models = require('./models.js'),
+    cors = require('cors'),
+    { check, validationResult } = require('express-validator');
 
 const app = express();
 
+let allowedOrigins = ['http://localhost:8080', 'http://testsite.com'];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            let message = 'The CORS policy for this application doesn’t allow access from origin ' + origin;
+            return callback(new Error(message), false);
+        }
+        return callback(null, true);
+    }
+}));
 
 const Movies = Models.Movie;
 const Users = Models.User;
@@ -29,7 +43,18 @@ require('./passport');
 
 //CREATE
 //Add a user
-app.post('/users', async (req, res) => {
+app.post('/users', [
+    check('Username', 'Username is required with at least 5 characters').isLength({ min: 5 }),
+    check('Password', 'Password is required').not().isEmpty(),
+    check('Email', 'Email does not appear to be valid').isEmail()
+], async (req, res) => {
+    // check the validation object for errors
+    let errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
+    let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOne({ Username: req.body.Username })
         .then((user) => {
             if (user) {
@@ -57,9 +82,9 @@ app.post('/users', async (req, res) => {
 
 // UPDATE
 // A user's info, by username
-app.put('/users/:Username', passport.authenticate('jwt', {session: false}), async (req, res) => {
+app.put('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
     //CONDITION TO CHECK ADDED HERE
-    if(req.user.Username !== req.params.Username){
+    if (req.user.Username !== req.params.Username) {
         return res.status(400).send('Permission denied');
     }
     // CONDITION ENDS
@@ -85,7 +110,7 @@ app.put('/users/:Username', passport.authenticate('jwt', {session: false}), asyn
 
 // UPDATE
 // Add a movie to a user's list of favorites
-app.patch('/users/:Username/movies/:MovieID', passport.authenticate('jwt', {session: false}), async (req, res) => {
+app.patch('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
     await Users.findOneAndUpdate({ Username: req.params.Username }, {
         $push: { FavoriteMovies: req.params.MovieID }
     },
@@ -102,7 +127,7 @@ app.patch('/users/:Username/movies/:MovieID', passport.authenticate('jwt', {sess
 
 // DELETE
 // Delete a movie from a user's list of favorites
-app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', {session: false}), async (req, res) => {
+app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
     await Users.findOneAndUpdate({ Username: req.params.Username }, {
         $pull: { FavoriteMovies: req.params.MovieID }
     },
@@ -118,7 +143,7 @@ app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', {ses
 
 // DELETE
 // Delete a user by username
-app.delete('/users/:Username', passport.authenticate('jwt', {session: false}), async (req, res) => {
+app.delete('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
     await Users.findOneAndDelete({ Username: req.params.Username })
         .then((user) => {
@@ -233,6 +258,11 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server and listen for requests on port 8080
-app.listen(8080, () => {
-    console.log('Your app is listening on port 8080.');
+// app.listen(8080, () => {
+//     console.log('Your app is listening on port 8080.');
+// });
+
+const port = process.env.PORT || 8080;
+app.listen(port, '0.0.0.0',() => {
+ console.log('Listening on Port ' + port);
 });
