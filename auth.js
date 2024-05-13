@@ -29,7 +29,10 @@ module.exports = (router) => {
                 if (error) {
                     res.send(error);
                 }
-                let token = generateJWTToken(user.toJSON());
+                let token = generateJWTToken({
+                    Username: user.Username,
+                    Password: user.Password // Pass the hashed password for token generation
+                });
                 return res.json({ user, token });
             });
         })(req, res);
