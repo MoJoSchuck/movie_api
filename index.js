@@ -88,30 +88,38 @@ app.post('/users', [
 // UPDATE
 // A user's info, by username
 app.put('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
-    //CONDITION TO CHECK ADDED HERE
+    // Check if the authenticated user matches the user to be updated
     if (req.user.Username !== req.params.Username) {
         return res.status(400).send('Permission denied');
     }
-    // CONDITION ENDS
-    await Users.findOneAndUpdate({ Username: req.params.Username }, {
-        $set:
-        {
-            Username: req.body.Username,
-            Password: req.body.Password,
-            Email: req.body.Email,
-            Birthday: req.body.Birthday
-        }
-    },
-        { new: true }) // This line makes sure that the updated document is returned
-        .then((updatedUser) => {
-            res.json(updatedUser);
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        })
 
+    // Create an object to hold the updated user data
+    let updatedUserData = {
+        Username: req.body.Username,
+        Email: req.body.Email,
+        Birthday: req.body.Birthday
+    };
+
+    // If a new password is provided, hash it before storing
+    if (req.body.Password) {
+        updatedUserData.Password = Users.hashPassword(req.body.Password);
+    }
+
+    // Update the user in the database
+    await Users.findOneAndUpdate(
+        { Username: req.params.Username },
+        { $set: updatedUserData },
+        { new: true } // Return the updated document
+    )
+    .then((updatedUser) => {
+        res.json(updatedUser);
+    })
+    .catch((err) => {
+        console.error(err);
+        res.status(500).send('Error: ' + err);
+    });
 });
+
 
 // UPDATE
 // Add a movie to a user's list of favorites
