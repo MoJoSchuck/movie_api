@@ -13,7 +13,7 @@ const express = require('express'),
 
 const app = express();
 
-let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://myflix777.netlify.app', 'http://localhost:4200', 'https://mojoschuck.github.io/myFlix-Angular-client'];
+let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://myflix777.netlify.app', 'http://localhost:4200', 'https://mojoschuck.github.io/myFlix-Angular-client/welcome'];
 
 app.use(cors({
     origin: (origin, callback) => {
