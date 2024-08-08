@@ -26,7 +26,7 @@ The objective of this project is to build the server-side component of a "movies
 ## Installation and Usage
 
 1. Clone the repository: `git clone https://github.com/MoJoSchuck/movie_api.git`
-2. Navigate to the project directory: `cd myflix-server`
+2. Navigate to the project directory: `cd movie_api`
 3. Install dependencies: `npm install`
 4. Start the server: `node index.js`
    The server runs by default on port 8080.
