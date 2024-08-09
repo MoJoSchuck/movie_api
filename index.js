@@ -29,7 +29,7 @@ app.use(cors({
 const Movies = Models.Movie;
 const Users = Models.User;
 
-// mongoose.connect('mongodb://localhost:27017/cfDB');
+// mongoose.connect('xxxx);
 mongoose.connect(process.env.CONNECTION_URI);
 
 app.use(bodyParser.json());
