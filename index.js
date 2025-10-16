@@ -1,49 +1,85 @@
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
-}
+// Load env vars early (works locally and in most hosts)
+require("dotenv").config();
 
-const express = require('express'),
-    morgan = require('morgan'),
-    uuid = require('uuid'),
-    bodyParser = require('body-parser'),
-    mongoose = require('mongoose'),
-    Models = require('./models.js'),
-    cors = require('cors'),
-    { check, validationResult } = require('express-validator');
+const express = require("express"),
+  morgan = require("morgan"),
+  uuid = require("uuid"),
+  bodyParser = require("body-parser"),
+  mongoose = require("mongoose"),
+  Models = require("./models.js"),
+  cors = require("cors"),
+  { check, validationResult } = require("express-validator");
 
 const app = express();
 
-let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://myflix777.netlify.app', 'http://localhost:4200', 'https://mojoschuck.github.io'];
+// CORS: allow Netlify + local; extendable via ALLOWED_ORIGINS env (comma-separated)
+let allowedOrigins = [
+  "http://localhost:8080",
+  "http://localhost:1234",
+  "http://localhost:4200",
+  "https://myflix777.netlify.app",
+  "https://mojoschuck.github.io",
+];
+if (process.env.ALLOWED_ORIGINS) {
+  allowedOrigins = [
+    ...new Set([
+      ...allowedOrigins,
+      ...process.env.ALLOWED_ORIGINS.split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ]),
+  ];
+}
 
-app.use(cors({
+app.use(
+  cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            let message = 'The CORS policy for this application doesn’t allow access from origin ' + origin;
-            return callback(new Error(message), false);
-        }
-        return callback(null, true);
-    }
-}));
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        let message =
+          "The CORS policy for this application doesn’t allow access from origin " +
+          origin;
+        return callback(new Error(message), false);
+      }
+      return callback(null, true);
+    },
+  })
+);
 
 const Movies = Models.Movie;
 const Users = Models.User;
 
-// mongoose.connect('xxxx);
-mongoose.connect(process.env.CONNECTION_URI);
+// Start server only after a successful DB connection
+const port = process.env.PORT || 8080;
+
+mongoose
+  .connect(process.env.CONNECTION_URI)
+  .then(() => {
+    console.log("Connected to mongoDB successfully! 🚀");
+    app.listen(port, "0.0.0.0", () => {
+      console.log("Listening on Port " + port);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err.message);
+    process.exit(1);
+  });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Import auth.js
-let auth = require('./auth')(app);
+let auth = require("./auth")(app);
 
 // Import passport and passport.js
-const passport = require('passport');
-require('./passport');
+const passport = require("passport");
+require("./passport");
 
 // Middleware for logging HTTP requests with the combined format
-app.use(morgan('combined'));
+app.use(morgan("combined"));
+
+// Simple health endpoint for readiness checks
+app.get("/health", (req, res) => res.status(200).send("ok"));
 
 /**
  * @function
@@ -54,39 +90,45 @@ app.use(morgan('combined'));
  * @throws {Error} If there is an error while creating the user
  * @returns {Object} JSON response containing the new user
  */
-app.post('/users', [
-    check('Username', 'Username is required with at least 5 characters').isLength({ min: 5 }),
-    check('Password', 'Password is required').not().isEmpty(),
-    check('Email', 'Email does not appear to be valid').isEmail()
-], async (req, res) => {
+app.post(
+  "/users",
+  [
+    check("Username", "Username is required").not().isEmpty(),
+    check("Password", "Password is required").not().isEmpty(),
+    check("Email", "Email does not appear to be valid").isEmail(),
+  ],
+  async (req, res) => {
     let errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(422).json({ errors: errors.array() });
+      return res.status(422).json({ errors: errors.array() });
     }
     let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOne({ Username: req.body.Username })
-        .then((user) => {
-            if (user) {
-                return res.status(400).send(req.body.Username + ' already exists');
-            } else {
-                Users.create({
-                    Username: req.body.Username,
-                    Password: hashedPassword,
-                    Email: req.body.Email,
-                    Birthday: req.body.Birthday
-                })
-                    .then((user) => { res.status(201).json(user) })
-                    .catch((error) => {
-                        console.error(error);
-                        res.status(500).send('Error: ' + error);
-                    });
-            }
-        })
-        .catch((error) => {
-            console.error(error);
-            res.status(500).send('Error: ' + error);
-        });
-});
+      .then((user) => {
+        if (user) {
+          return res.status(400).send(req.body.Username + " already exists");
+        } else {
+          Users.create({
+            Username: req.body.Username,
+            Password: hashedPassword,
+            Email: req.body.Email,
+            Birthday: req.body.Birthday,
+          })
+            .then((user) => {
+              res.status(201).json(user);
+            })
+            .catch((error) => {
+              console.error(error);
+              res.status(500).send("Error: " + error);
+            });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        res.status(500).send("Error: " + error);
+      });
+  }
+);
 
 /**
  * @function
@@ -97,31 +139,35 @@ app.post('/users', [
  * @throws {Error} If there is an error while updating the user
  * @returns {Object} JSON response containing the updated user
  */
-app.put('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.put(
+  "/users/:Username",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     if (req.user.Username !== req.params.Username) {
-        return res.status(400).send('Permission denied');
+      return res.status(400).send("Permission denied");
     }
     let updatedUserData = {
-        Username: req.body.Username,
-        Email: req.body.Email,
-        Birthday: req.body.Birthday
+      Username: req.body.Username,
+      Email: req.body.Email,
+      Birthday: req.body.Birthday,
     };
     if (req.body.Password) {
-        updatedUserData.Password = Users.hashPassword(req.body.Password);
+      updatedUserData.Password = Users.hashPassword(req.body.Password);
     }
     await Users.findOneAndUpdate(
-        { Username: req.params.Username },
-        { $set: updatedUserData },
-        { new: true } // Return the updated document
+      { Username: req.params.Username },
+      { $set: updatedUserData },
+      { new: true } // Return the updated document
     )
-        .then((updatedUser) => {
-            res.json(updatedUser);
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        });
-});
+      .then((updatedUser) => {
+        res.json(updatedUser);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error: " + err);
+      });
+  }
+);
 
 /**
  * @function
@@ -132,19 +178,26 @@ app.put('/users/:Username', passport.authenticate('jwt', { session: false }), as
  * @throws {Error} If there is an error while adding the movie
  * @returns {Object} JSON response containing the updated user
  */
-app.patch('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
-    await Users.findOneAndUpdate({ Username: req.params.Username }, {
-        $push: { FavoriteMovies: req.params.MovieID }
-    },
-        { new: true }) // This line makes sure that the updated document is returned
-        .then((updatedUser) => {
-            res.json(updatedUser);
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        });
-});
+app.patch(
+  "/users/:Username/movies/:MovieID",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    await Users.findOneAndUpdate(
+      { Username: req.params.Username },
+      {
+        $push: { FavoriteMovies: req.params.MovieID },
+      },
+      { new: true }
+    ) // This line makes sure that the updated document is returned
+      .then((updatedUser) => {
+        res.json(updatedUser);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error: " + err);
+      });
+  }
+);
 
 /**
  * @function
@@ -155,19 +208,26 @@ app.patch('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { ses
  * @throws {Error} If there is an error while deleting the movie
  * @returns {Object} JSON response containing the updated user
  */
-app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
-    await Users.findOneAndUpdate({ Username: req.params.Username }, {
-        $pull: { FavoriteMovies: req.params.MovieID }
-    },
-        { new: true }) // This line makes sure that the updated document is returned
-        .then((updatedUser) => {
-            res.json(updatedUser);
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        });
-});
+app.delete(
+  "/users/:Username/movies/:MovieID",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    await Users.findOneAndUpdate(
+      { Username: req.params.Username },
+      {
+        $pull: { FavoriteMovies: req.params.MovieID },
+      },
+      { new: true }
+    ) // This line makes sure that the updated document is returned
+      .then((updatedUser) => {
+        res.json(updatedUser);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error: " + err);
+      });
+  }
+);
 
 /**
  * @function
@@ -178,20 +238,24 @@ app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { se
  * @throws {Error} If there is an error while deleting the user
  * @returns {String} Success message
  */
-app.delete('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.delete(
+  "/users/:Username",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     await Users.findOneAndDelete({ Username: req.params.Username })
-        .then((user) => {
-            if (!user) {
-                res.status(404).send(req.params.Username + ' was not found');
-            } else {
-                res.status(200).send(req.params.Username + ' was deleted.');
-            }
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        });
-});
+      .then((user) => {
+        if (!user) {
+          res.status(404).send(req.params.Username + " was not found");
+        } else {
+          res.status(200).send(req.params.Username + " was deleted.");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error: " + err);
+      });
+  }
+);
 
 /**
  * @function
@@ -201,8 +265,8 @@ app.delete('/users/:Username', passport.authenticate('jwt', { session: false }),
  * @param {Object} res - Express response object
  * @returns {String} Welcome message
  */
-app.get('/', (req, res) => {
-    res.send('Welcome to myFlix!');
+app.get("/", (req, res) => {
+  res.send("Welcome to myFlix!");
 });
 
 /**
@@ -214,16 +278,20 @@ app.get('/', (req, res) => {
  * @throws {Error} If there is an error while retrieving the movies
  * @returns {Object[]} List of movies
  */
-app.get('/movies', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.get(
+  "/movies",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     await Movies.find()
-        .then((movies) => {
-            res.status(201).json(movies);
-        })
-        .catch((error) => {
-            console.error(error);
-            res.status(500).send('Error: ' + error);
-        });
-});
+      .then((movies) => {
+        res.status(200).json(movies);
+      })
+      .catch((error) => {
+        console.error(error);
+        res.status(500).send("Error: " + error);
+      });
+  }
+);
 
 /**
  * @function
@@ -234,16 +302,20 @@ app.get('/movies', passport.authenticate('jwt', { session: false }), async (req,
  * @throws {Error} If there is an error while retrieving the movie
  * @returns {Object} Movie details
  */
-app.get('/movies/:title', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.get(
+  "/movies/:title",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     const title = req.params.title;
     const movie = await Movies.findOne({ Title: title });
 
     if (movie) {
-        res.status(200).json(movie);
+      res.status(200).json(movie);
     } else {
-        res.status(404).send('Movie not found');
+      res.status(404).send("Movie not found");
     }
-});
+  }
+);
 
 /**
  * @function
@@ -254,21 +326,25 @@ app.get('/movies/:title', passport.authenticate('jwt', { session: false }), asyn
  * @throws {Error} If there is an error while retrieving the genre
  * @returns {Object} Genre details
  */
-app.get('/movies/genre/:genreName', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.get(
+  "/movies/genre/:genreName",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     try {
-        const genreName = req.params.genreName;
-        const movie = await Movies.findOne({ 'Genre.Name': genreName });
+      const genreName = req.params.genreName;
+      const movie = await Movies.findOne({ "Genre.Name": genreName });
 
-        if (movie) {
-            res.status(200).json(movie.Genre);
-        } else {
-            res.status(404).send('No such genre found');
-        }
+      if (movie) {
+        res.status(200).json(movie.Genre);
+      } else {
+        res.status(404).send("No such genre found");
+      }
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Error: ' + err);
+      console.error(err);
+      res.status(500).send("Error: " + err);
     }
-});
+  }
+);
 
 /**
  * @function
@@ -279,21 +355,25 @@ app.get('/movies/genre/:genreName', passport.authenticate('jwt', { session: fals
  * @throws {Error} If there is an error while retrieving the director
  * @returns {Object} Director details
  */
-app.get('/movies/directors/:directorName', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.get(
+  "/movies/directors/:directorName",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     try {
-        const directorName = req.params.directorName;
-        const movie = await Movies.findOne({ 'Director.Name': directorName });
+      const directorName = req.params.directorName;
+      const movie = await Movies.findOne({ "Director.Name": directorName });
 
-        if (movie) {
-            res.status(200).json(movie.Director);
-        } else {
-            res.status(404).send('No such director');
-        }
+      if (movie) {
+        res.status(200).json(movie.Director);
+      } else {
+        res.status(404).send("No such director");
+      }
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Error: ' + err);
+      console.error(err);
+      res.status(500).send("Error: " + err);
     }
-});
+  }
+);
 
 /**
  * @function
@@ -304,16 +384,20 @@ app.get('/movies/directors/:directorName', passport.authenticate('jwt', { sessio
  * @throws {Error} If there is an error while retrieving the users
  * @returns {Object[]} List of users
  */
-app.get('/users', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.get(
+  "/users",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     await Users.find()
-        .then((users) => {
-            res.status(201).json(users);
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        });
-});
+      .then((users) => {
+        res.status(200).json(users);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error: " + err);
+      });
+  }
+);
 
 /**
  * @function
@@ -325,28 +409,28 @@ app.get('/users', passport.authenticate('jwt', { session: false }), async (req, 
  * @throws {Error} If there is an error while retrieving the user
  * @returns {Object} User details
  */
-app.get('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.get(
+  "/users/:Username",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
     await Users.findOne({ Username: req.params.Username })
-        .then((user) => {
-            res.json(user);
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        });
-});
+      .then((user) => {
+        res.json(user);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Error: " + err);
+      });
+  }
+);
 
 // Middleware for serving static files from the public directory
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 // Error-handling middleware called when an error occurs
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
 });
 
-// Start the server and listen for requests on port 8080
-const port = process.env.PORT || 8080;
-app.listen(port, '0.0.0.0', () => {
-    console.log('Listening on Port ' + port);
-});
+// Server starts in the MongoDB connect() success handler above
