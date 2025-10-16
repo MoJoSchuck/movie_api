@@ -272,13 +272,25 @@ app.get("/", (req, res) => {
       <html lang="en">
       <head>
         <meta charset="utf-8" />
-        <meta http-equiv="refresh" content="0;url=${frontend}" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>myFlix API</title>
-        <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',sans-serif;padding:24px;line-height:1.5}</style>
+        <style>
+          body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',sans-serif;padding:24px;line-height:1.5}
+          a.button, button{display:inline-block;margin-top:12px;padding:10px 14px;border:1px solid #ccc;border-radius:8px;text-decoration:none;color:#111;background:#f7f7f7}
+          .muted{color:#666}
+        </style>
       </head>
       <body>
         <h1>API is awake ✅</h1>
-        <p>Redirecting to frontend… <a href="${frontend}">${frontend}</a></p>
+        <p class="muted">This API is running on Render. Open the frontend in a new tab:</p>
+        <p>
+          <a class="button" href="${frontend}" target="_blank" rel="noopener noreferrer">Open myFlix frontend ↗</a>
+        </p>
+        <script>
+          // Try to open automatically; may be blocked by pop-up blockers
+          const url = ${JSON.stringify(frontend)};
+          try { setTimeout(() => window.open(url, '_blank', 'noopener'), 300); } catch (e) {}
+        </script>
       </body>
       </html>`);
   } else {
