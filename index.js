@@ -266,7 +266,24 @@ app.delete(
  * @returns {String} Welcome message
  */
 app.get("/", (req, res) => {
-  res.send("Welcome to myFlix!");
+  const frontend = "https://myflix777.netlify.app";
+  if (frontend) {
+    res.status(200).send(`<!doctype html>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="refresh" content="0;url=${frontend}" />
+        <title>myFlix API</title>
+        <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',sans-serif;padding:24px;line-height:1.5}</style>
+      </head>
+      <body>
+        <h1>API is awake ✅</h1>
+        <p>Redirecting to frontend… <a href="${frontend}">${frontend}</a></p>
+      </body>
+      </html>`);
+  } else {
+    res.send("Welcome to myFlix!");
+  }
 });
 
 /**
